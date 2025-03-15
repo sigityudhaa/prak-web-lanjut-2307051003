@@ -5,6 +5,7 @@ use App\Models\Kelas;
 use App\Models\User;
 use App\Models\UserModel;
 use App\Http\Requests\UserRequest;
+
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -31,5 +32,18 @@ class UserController extends Controller
             'npm' => $user->npm,
             'nama_kelas' => $user->kelas->nama_kelas ?? 'Kelas tidak ditemukan',
         ]);
+    }
+}
+
+        return view('create_user');
+    }
+    public function store(Request $request){
+
+        $data = [
+            'nama' => $request ->input('nama'),
+            'kelas' => $request ->input('kelas'),
+            'npm' => $request ->input('npm'),
+        ];
+        return view('profile',$data);
     }
 }
