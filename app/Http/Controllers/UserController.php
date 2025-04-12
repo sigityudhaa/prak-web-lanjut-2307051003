@@ -9,6 +9,20 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    // public function create(){
+    //     return view('create_user', [
+    //         'kelas' => Kelas::all(),
+    //     ]);
+    // }
+    // public function store(Request $request){
+    //     $data = [
+    //         'nama'=>$request->input('nama'),
+    //         'kelas'=>$request->input('kelas'),
+    //         'npm'=>$request->input('npm'),
+    //     ];
+    //     return view('profile', $data);
+    // }
+
     public function create()
     {
         $kelasModel = new Kelas();
@@ -22,23 +36,56 @@ class UserController extends Controller
 
         return view('create_user', $data);
     }
-    // public function store(Request $request){
-    //     $data = [
-    //         'nama'=>$request->input('nama'),
-    //         'kelas'=>$request->input('kelas'),
-    //         'npm'=>$request->input('npm'),
-    //     ];
-    //     return view('profile', $data);
-    // }
+    
     public function store(UserRequest $request){
-        $this->userModel->create([ 
-            'nama' => $request->input('nama'), 
-            'npm' => $request->input('npm'), 
-            'kelas_id' => $request->input('kelas_id'), 
-            ]); 
-            return redirect()->to('/user');
+        $validateData = $request->validate([
+            'nama' => 'required|string|max:255',
+            'npm' => 'required|string|max:255',
+            'kelas_id' => 'required|exists:kelas,id',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ], 
+        [
+            'nama.required' => 'Nama tidak boleh kosong!',
+            'nama.max' => 'Nama tidak boleh lebih dari 255 kata',
+            'npm.required' => 'NPM tidak boleh kosong',
+            'npm.size' => 'NPM harus terdiri dari 10 digit',
+            'foto.image' => 'File harus berupa gambar',
+            'foto.max' => 'Max size foto adalah 2mb',
+        ]
+        );
 
+        if ($request->hasFile('foto')) {
+            $foto = $request->file('foto');
+            $fotoPath = time() . '_' . $foto->getClientOriginalName();
+            $foto->move(public_path('upload/img'), $fotoPath);
+        } else {
+            $fotoPath = null;
+        }
+
+            $this->userModel->create([
+                'nama' => $request->input('nama'),
+                'npm' => $request->input('npm'),
+                'kelas_id' => $request->input('kelas_id'),
+                'foto' => $fotoPath, // Menyimpan path foto
+                ]);
+                return redirect()->to('/user')->with('success', 'User
+                berhasil ditambahkan');
+
+        // $this->userModel->create($validateData);
+
+        // return redirect()->to('/user');
+
+        // $user = UserModel::create($validateData);
+
+        // $user->load('kelas');
+
+        // return view ('profile', [
+        //     'nama' => $user->nama,
+        //     'npm' => $user->npm,
+        //     'nama_kelas' => $user->kelas->nama_kelas ?? 'Kelas tidak ditemukan',
+        // ]);
     }
+
     public $userModel;
     public $kelasModel;
 
@@ -49,9 +96,21 @@ class UserController extends Controller
 
     public function index(){
         $data = [
-            'title' => 'Create User',
+            'title' => 'List User',
             'users' => $this->userModel->getUser(),
         ];
         return view('list_user', $data);
     }
+
+    public function show($id){
+        $user = $this->userModel->getUser($id);
+
+        $data = [
+            'title' => 'Profile',
+            'user' => $user
+        ];
+
+        return view('profile', $data);
+    }
+
 }
